@@ -60,7 +60,7 @@
         </div>
         <div>
           <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
-            SMPN 2 PArindu <span class="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-medium">Anti-Cheat v2.5</span>
+            SMPN 2 Parindu <span class="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-medium">Anti-Cheat v2.5</span>
           </h1>
           <p class="text-xs text-slate-400" id="headerSubtitle">Portal Ujian Terproteksi Berbasis Google Form</p>
         </div>
@@ -127,13 +127,13 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-slate-300 mb-1">Judul Mata Pelajaran / Ujian</label>
-              <input type="text" id="cfgExamTitle" value="Ujian Akhir Semester - Matematika & Sains" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500">
+              <input type="text" id="cfgExamTitle" value="Sumatif Tengah Semester - Informatika" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500">
             </div>
 
             <div>
               <label class="block text-sm font-medium text-slate-300 mb-1">Tautan / URL Google Form Ujian</label>
               <div class="relative">
-                <input type="url" id="cfgFormUrl" placeholder="https://docs.google.com/forms/d/e/.../viewform?embedded=true" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500 text-sm">
+                <input type="url" id="cfgFormUrl" value="https://docs.google.com/forms/d/e/1FAIpQLSeWC2TwOajdsvI_oWFX6fwou-BOJ965zVScbT9RYYIT7n0obg/viewform?usp=header" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500 text-sm">
                 <i data-lucide="link" class="w-4 h-4 text-slate-400 absolute left-3 top-3.5"></i>
               </div>
               <p class="text-xs text-slate-400 mt-1">Pastikan memakai link publik Google Form (opsi "Kirim" &rarr; salin tautan embed/URL).</p>
@@ -142,7 +142,7 @@
             <div class="grid grid-cols-2 gap-4">
               <div>
                 <label class="block text-sm font-medium text-slate-300 mb-1">Durasi Ujian (Menit)</label>
-                <input type="number" id="cfgDuration" value="45" min="5" max="300" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500">
+                <input type="number" id="cfgDuration" value="90" min="5" max="300" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500">
               </div>
               <div>
                 <label class="block text-sm font-medium text-slate-300 mb-1">Batas Toleransi Pelanggaran</label>
@@ -263,7 +263,7 @@
         <div class="space-y-4">
           <div>
             <label class="block text-sm font-medium text-slate-300 mb-1">Nama Lengkap Peserta Didik <span class="text-rose-400">*</span></label>
-            <input type="text" id="studentNameInput" placeholder="Contoh: Ahmad Rizky" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+            <input type="text" id="studentNameInput" placeholder="Contoh: Yosep Poluan" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -294,7 +294,7 @@
               </li>
               <li class="flex items-center justify-between">
                 <span class="flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-purple-400"></i> Alokasi Durasi Ujian</span>
-                <span id="dispExamDuration" class="text-slate-200 font-mono font-bold">45 Menit</span>
+                <span id="dispExamDuration" class="text-slate-200 font-mono font-bold">90 Menit</span>
               </li>
             </ul>
           </div>
@@ -491,7 +491,7 @@
       <p class="text-xs text-slate-400">Masukkan PIN Pengawas untuk mengakses pengaturan dan log pemantauan ujian.</p>
       
       <div>
-        <input type="password" id="proctorPinInput" placeholder="Masukkan PIN (Default: 1234)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-white font-mono text-xl tracking-widest focus:outline-none focus:border-blue-500">
+        <input type="password" id="proctorPinInput" placeholder="Masukkan PIN (Default: 316316)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-white font-mono text-xl tracking-widest focus:outline-none focus:border-blue-500">
         <p id="proctorPinError" class="text-xs text-rose-400 mt-1 hidden">PIN tidak valid!</p>
       </div>
 
