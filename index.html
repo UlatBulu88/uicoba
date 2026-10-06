@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full bg-slate-900 text-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SafeExam AI Pro - Portal Ujian Anti Curang</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: '#2563eb',
+              600: '#1d4ed8',
+              700: '#1e40af',
+              900: '#0f172a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Custom CSS animations and blur overlays */
+    .blur-security {
+      filter: blur(16px);
+      pointer-events: none;
+      user-select: none;
+    }
+    .no-select {
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+    /* Smooth transitions */
+    .transition-all-300 {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+  </style>
+</head>
+<body class="h-full flex flex-col font-sans antialiased overflow-x-hidden no-select" id="appBody" oncontextmenu="return false;">
+
+  <!-- Top Navigation / Status Header -->
+  <header class="bg-slate-800 border-b border-slate-700 text-white px-4 py-3 sticky top-0 z-40 shadow-md">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <!-- Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-600 text-white p-2 rounded-lg shadow-lg flex items-center justify-center">
+          <i data-lucide="shield-check" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <h1 class="text-lg font-bold tracking-tight text-white flex items-center gap-2">
+            SafeExam <span class="text-xs bg-blue-500/20 text-blue-400 border border-blue-500/30 px-2 py-0.5 rounded-full font-medium">Anti-Cheat v2.5</span>
+          </h1>
+          <p class="text-xs text-slate-400" id="headerSubtitle">Portal Ujian Terproteksi Berbasis Google Form</p>
+        </div>
+      </div>
+
+      <!-- Live Exam Status (Visible in Exam Mode) -->
+      <div id="liveExamMetrics" class="hidden flex items-center gap-4 text-xs md:text-sm">
+        <!-- Timer Badge -->
+        <div class="bg-slate-900/80 border border-slate-700 px-3 py-1.5 rounded-lg flex items-center gap-2">
+          <i data-lucide="clock" class="w-4 h-4 text-amber-400 animate-pulse"></i>
+          <span class="text-slate-400 hidden sm:inline">Sisa Waktu:</span>
+          <span id="examTimerDisplay" class="font-mono font-bold text-amber-400 text-base">00:00:00</span>
+        </div>
+
+        <!-- Strike Counter -->
+        <div id="strikeBadge" class="bg-slate-900/80 border border-emerald-500/30 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-colors">
+          <i data-lucide="alert-triangle" class="w-4 h-4 text-emerald-400" id="strikeIcon"></i>
+          <span class="text-slate-400 hidden sm:inline">Pelanggaran:</span>
+          <span id="strikeCountDisplay" class="font-bold text-emerald-400">0 / 3</span>
+        </div>
+
+        <!-- Fullscreen Status Badge -->
+        <div id="fsBadge" class="bg-slate-900/80 border border-slate-700 px-3 py-1.5 rounded-lg hidden sm:flex items-center gap-2">
+          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+          <span class="text-slate-300 font-medium">Layar Penuh</span>
+        </div>
+      </div>
+
+      <!-- Mode Switcher Buttons -->
+      <div class="flex items-center space-x-2">
+        <button id="btnProctorMode" onclick="toggleRoleModal('proctor')" class="text-xs md:text-sm bg-slate-700 hover:bg-slate-600 text-slate-200 px-3 py-1.5 rounded-lg border border-slate-600 transition flex items-center gap-1.5">
+          <i data-lucide="settings" class="w-4 h-4 text-blue-400"></i>
+          <span class="hidden md:inline">Mode Guru / Pengawas</span>
+        </button>
+        <button id="btnStudentMode" onclick="switchView('student-setup')" class="text-xs md:text-sm bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5">
+          <i data-lucide="user-check" class="w-4 h-4"></i>
+          <span>Portal Siswa</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center relative">
+
+    <!-- VIEW 1: TEACHER / PROCTOR DASHBOARD -->
+    <section id="viewProctor" class="hidden space-y-6">
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-700 pb-4 mb-6">
+          <div>
+            <h2 class="text-xl font-bold text-white flex items-center gap-2">
+              <i data-lucide="sliders" class="text-blue-400"></i> Konfigurasi Sesi Ujian Baru
+            </h2>
+            <p class="text-sm text-slate-400">Atur tautan Google Form dan parameter keamanan anti curang sebelum diberikan ke peserta didik.</p>
+          </div>
+          <div class="flex gap-2">
+            <button onclick="loadDemoPreset()" class="px-3 py-2 bg-slate-700 hover:bg-slate-600 text-xs text-slate-200 rounded-lg border border-slate-600 flex items-center gap-1">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-400"></i> Isi Contoh Pengaturan
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <!-- Left Column: Form Settings -->
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1">Judul Mata Pelajaran / Ujian</label>
+              <input type="text" id="cfgExamTitle" value="Ujian Akhir Semester - Matematika & Sains" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1">Tautan / URL Google Form Ujian</label>
+              <div class="relative">
+                <input type="url" id="cfgFormUrl" placeholder="https://docs.google.com/forms/d/e/.../viewform?embedded=true" class="w-full bg-slate-900 border border-slate-700 rounded-lg pl-10 pr-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500 text-sm">
+                <i data-lucide="link" class="w-4 h-4 text-slate-400 absolute left-3 top-3.5"></i>
+              </div>
+              <p class="text-xs text-slate-400 mt-1">Pastikan memakai link publik Google Form (opsi "Kirim" &rarr; salin tautan embed/URL).</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-1">Durasi Ujian (Menit)</label>
+                <input type="number" id="cfgDuration" value="45" min="5" max="300" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-slate-300 mb-1">Batas Toleransi Pelanggaran</label>
+                <select id="cfgMaxStrikes" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500">
+                  <option value="1">1x Langsung Diskualifikasi</option>
+                  <option value="2">2x Peringatan & Diskualifikasi</option>
+                  <option value="3" selected>3x Toleransi Maksimal (Rekomendasi)</option>
+                  <option value="5">5x Toleransi Ringan</option>
+                </select>
+              </div>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1">PIN Pengawas (Untuk Buka Kunci / Reset Diskualifikasi)</label>
+              <input type="password" id="cfgProctorPin" value="1234" maxlength="6" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-slate-100 focus:outline-none focus:border-blue-500 font-mono tracking-widest">
+            </div>
+          </div>
+
+          <!-- Right Column: Anti-Cheat Protections Toggle -->
+          <div class="bg-slate-900/60 border border-slate-700/80 rounded-xl p-5 space-y-4">
+            <h3 class="font-semibold text-slate-200 border-b border-slate-700 pb-2 flex items-center gap-2">
+              <i data-lucide="shield-alert" class="w-4 h-4 text-emerald-400"></i> Proteksi Anti-Curang Aktif
+            </h3>
+
+            <div class="space-y-3">
+              <label class="flex items-center justify-between p-2.5 bg-slate-800/80 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800">
+                <span class="text-sm font-medium text-slate-200 flex items-center gap-2">
+                  <i data-lucide="maximize" class="w-4 h-4 text-blue-400"></i> Wajib Mode Layar Penuh (Fullscreen)
+                </span>
+                <input type="checkbox" id="chkFullscreen" checked class="w-4 h-4 accent-blue-600 rounded">
+              </label>
+
+              <label class="flex items-center justify-between p-2.5 bg-slate-800/80 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800">
+                <span class="text-sm font-medium text-slate-200 flex items-center gap-2">
+                  <i data-lucide="tab" class="w-4 h-4 text-amber-400"></i> Deteksi Pindah Tab / Buka Aplikasi Lain
+                </span>
+                <input type="checkbox" id="chkTabDetect" checked class="w-4 h-4 accent-blue-600 rounded">
+              </label>
+
+              <label class="flex items-center justify-between p-2.5 bg-slate-800/80 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800">
+                <span class="text-sm font-medium text-slate-200 flex items-center gap-2">
+                  <i data-lucide="copy-x" class="w-4 h-4 text-rose-400"></i> Blokir Copy, Paste, & Klik Kanan
+                </span>
+                <input type="checkbox" id="chkBlockCopy" checked class="w-4 h-4 accent-blue-600 rounded">
+              </label>
+
+              <label class="flex items-center justify-between p-2.5 bg-slate-800/80 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800">
+                <span class="text-sm font-medium text-slate-200 flex items-center gap-2">
+                  <i data-lucide="keyboard" class="w-4 h-4 text-purple-400"></i> Blokir Tombol Pintas DevTools & Alt+Tab
+                </span>
+                <input type="checkbox" id="chkBlockKeys" checked class="w-4 h-4 accent-blue-600 rounded">
+              </label>
+
+              <label class="flex items-center justify-between p-2.5 bg-slate-800/80 rounded-lg border border-slate-700 cursor-pointer hover:bg-slate-800">
+                <span class="text-sm font-medium text-slate-200 flex items-center gap-2">
+                  <i data-lucide="eye-off" class="w-4 h-4 text-teal-400"></i> Sensor Blur Otomatis Saat Fokus Hilang
+                </span>
+                <input type="checkbox" id="chkBlurOnFocusLoss" checked class="w-4 h-4 accent-blue-600 rounded">
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="mt-6 pt-4 border-t border-slate-700 flex flex-wrap justify-between items-center gap-4">
+          <div class="text-xs text-slate-400">
+            *Pengaturan ini akan tersimpan otomatis untuk sesi ujian siswa di perangkat ini.
+          </div>
+          <button onclick="saveAndStartSession()" class="bg-blue-600 hover:bg-blue-500 text-white font-semibold px-6 py-2.5 rounded-lg shadow-lg flex items-center gap-2 transition">
+            <i data-lucide="play-circle" class="w-5 h-5"></i> Simpan & Buka Sesi Ujian Siswa
+          </button>
+        </div>
+      </div>
+
+      <!-- Proctor Monitoring Simulation Panel -->
+      <div class="bg-slate-800 border border-slate-700 rounded-xl p-6 shadow-xl">
+        <h3 class="text-md font-bold text-slate-200 mb-3 flex items-center gap-2">
+          <i data-lucide="activity" class="text-emerald-400"></i> Log Aktivitas Pengawasan Real-Time (Simulasi)
+        </h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs md:text-sm text-slate-300">
+            <thead class="bg-slate-900/80 text-slate-400 uppercase font-mono text-[11px]">
+              <tr>
+                <th class="p-3">Waktu</th>
+                <th class="p-3">Nama Siswa</th>
+                <th class="p-3">Jenis Kejadian</th>
+                <th class="p-3">Status Strike</th>
+                <th class="p-3">Tindakan Sistem</th>
+              </tr>
+            </thead>
+            <tbody id="proctorLogTable" class="divide-y divide-slate-700">
+              <tr class="hover:bg-slate-750">
+                <td class="p-3 font-mono text-slate-400">10:00:12</td>
+                <td class="p-3 font-medium text-white">Budi Santoso</td>
+                <td class="p-3 text-slate-300">Sesi Ujian Dimulai</td>
+                <td class="p-3"><span class="px-2 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full font-bold">0 / 3</span></td>
+                <td class="p-3 text-slate-400">Diizinkan</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: STUDENT PRE-EXAM CHECK & ENTRY -->
+    <section id="viewStudentSetup" class="max-w-2xl mx-auto w-full space-y-6">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-2xl">
+        <!-- Banner Header -->
+        <div class="text-center space-y-2 mb-6">
+          <div class="inline-flex items-center justify-center p-3 bg-blue-500/10 text-blue-400 rounded-2xl mb-1 border border-blue-500/20">
+            <i data-lucide="graduation-cap" class="w-8 h-8"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-white tracking-tight" id="dispExamTitle">Ujian Akhir Semester - Matematika</h2>
+          <p class="text-slate-400 text-sm">Selamat datang. Harap lengkapi identitas dan verifikasi sistem keamanan sebelum memulai ujian.</p>
+        </div>
+
+        <!-- Student Form -->
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-1">Nama Lengkap Peserta Didik <span class="text-rose-400">*</span></label>
+            <input type="text" id="studentNameInput" placeholder="Contoh: Ahmad Rizky" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1">Kelas / Rombel <span class="text-rose-400">*</span></label>
+              <input type="text" id="studentClassInput" placeholder="Contoh: XII MIPA 1" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-slate-300 mb-1">Nomor Induk / Ujian <span class="text-rose-400">*</span></label>
+              <input type="text" id="studentIdInput" placeholder="Contoh: 20261088" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500">
+            </div>
+          </div>
+
+          <!-- Pre-flight Security Checklist -->
+          <div class="bg-slate-900/80 border border-slate-700 rounded-xl p-4 space-y-3 mt-4">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center justify-between">
+              <span>Pemeriksaan Kelayakan Sistem</span>
+              <span class="text-emerald-400 flex items-center gap-1"><i data-lucide="check-circle" class="w-3.5 h-3.5"></i> Siap</span>
+            </h4>
+            <ul class="text-xs text-slate-300 space-y-2">
+              <li class="flex items-center justify-between">
+                <span class="flex items-center gap-2"><i data-lucide="monitor" class="w-4 h-4 text-blue-400"></i> Mode Layar Penuh (Fullscreen)</span>
+                <span id="chkStatusFs" class="text-emerald-400 font-semibold">Mendukung</span>
+              </li>
+              <li class="flex items-center justify-between">
+                <span class="flex items-center gap-2"><i data-lucide="bell-off" class="w-4 h-4 text-amber-400"></i> Deteksi Fokus Tab / Aplikasi</span>
+                <span class="text-emerald-400 font-semibold">Aktif</span>
+              </li>
+              <li class="flex items-center justify-between">
+                <span class="flex items-center gap-2"><i data-lucide="clock" class="w-4 h-4 text-purple-400"></i> Alokasi Durasi Ujian</span>
+                <span id="dispExamDuration" class="text-slate-200 font-mono font-bold">45 Menit</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Honor Code / Pledge -->
+          <div class="flex items-start gap-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+            <input type="checkbox" id="chkHonorPledge" class="mt-1 w-4 h-4 accent-blue-600 rounded">
+            <label for="chkHonorPledge" class="text-xs text-amber-200 leading-relaxed cursor-pointer">
+              Saya berjanji akan mengerjakan ujian ini secara jujur, tidak membuka tab/aplikasi lain, tidak mencari jawaban dari luar, dan siap menerima konsekuensi berupa pembekuan ujian jika melanggar.
+            </label>
+          </div>
+
+          <!-- Start Button -->
+          <button onclick="startStudentExam()" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-6 rounded-xl shadow-lg transition flex items-center justify-center gap-2 text-base">
+            <i data-lucide="shield-check" class="w-5 h-5"></i>
+            <span>Masuk Ruang Ujian & Aktifkan Layar Penuh</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: ACTIVE EXAM ROOM -->
+    <section id="viewActiveExam" class="hidden flex-1 flex flex-col h-full min-h-[80vh] relative">
+
+      <!-- Anti-Cheat Overlay Banner inside exam room -->
+      <div id="securityTopNotice" class="bg-blue-900/40 border border-blue-500/30 text-blue-200 px-4 py-2 rounded-lg mb-3 flex items-center justify-between text-xs">
+        <div class="flex items-center gap-2">
+          <i data-lucide="shield" class="w-4 h-4 text-blue-400 animate-pulse"></i>
+          <span><strong>Sistem Pengawasan Aktif:</strong> Jangan berpindah tab, keluar dari mode layar penuh, atau menekan tombol pintas.</span>
+        </div>
+        <button onclick="toggleFallbackNotice()" class="text-slate-400 hover:text-white underline text-[11px]">Bermasalah dengan Form?</button>
+      </div>
+
+      <!-- Main Form Container -->
+      <div class="flex-1 bg-slate-800 border border-slate-700 rounded-xl overflow-hidden relative shadow-2xl flex flex-col" id="examFrameWrapper">
+        
+        <!-- Frame Loading Indicator -->
+        <div id="frameLoader" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center z-10 space-y-3">
+          <div class="w-10 h-10 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          <p class="text-sm text-slate-300 font-medium">Memuat Lembar Soal Google Form...</p>
+        </div>
+
+        <!-- Google Form / External Form IFrame -->
+        <iframe id="googleFormIframe" src="" class="w-full flex-1 border-0 min-h-[600px] bg-white rounded-b-xl" onload="onIframeLoaded()"></iframe>
+
+        <!-- Fallback Interactive Quiz Component (Used if Google Form URL fails to load or blocks iframe framing) -->
+        <div id="fallbackQuizContainer" class="hidden flex-1 p-6 md:p-8 bg-slate-900 text-slate-100 overflow-y-auto space-y-6">
+          <div class="bg-amber-500/10 border border-amber-500/30 text-amber-300 p-4 rounded-xl text-xs flex items-center gap-3">
+            <i data-lucide="info" class="w-5 h-5 flex-shrink-0"></i>
+            <div>
+              <strong>Mode Lembar Ujian Lokal Aktif:</strong> Google Form memerlukan otorisasi iframe langsung atau link di atas tidak mengizinkan penanaman. Gunakan lembar respons langsung di bawah ini untuk ujian.
+            </div>
+          </div>
+
+          <div id="interactiveQuestionsList" class="space-y-6 max-w-3xl mx-auto">
+            <!-- Questions rendered via JS -->
+          </div>
+
+          <div class="max-w-3xl mx-auto pt-4 border-t border-slate-800 flex justify-end">
+            <button onclick="submitExamManual()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i> Kirim Jawaban Ujian
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Action Floating Bar -->
+      <div class="mt-3 flex items-center justify-between text-xs text-slate-400">
+        <div class="flex items-center gap-2">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>Peserta: <strong id="dispStudentNameTag" class="text-slate-200">Ahmad Rizky</strong> (<span id="dispStudentClassTag">XII MIPA 1</span>)</span>
+        </div>
+        <div class="flex gap-3">
+          <button onclick="requestProctorHelp()" class="text-slate-400 hover:text-amber-400 transition flex items-center gap-1">
+            <i data-lucide="help-circle" class="w-3.5 h-3.5"></i> Minta Bantuan Pengawas
+          </button>
+          <button onclick="finishExamPrompt()" class="bg-blue-600/80 hover:bg-blue-600 text-white px-3 py-1 rounded-md text-xs font-semibold">
+            Selesai Ujian
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 4: VIOLATION STRIKE WARNING MODAL (ANTI-CHEAT OVERLAY) -->
+    <div id="modalViolation" class="fixed inset-0 bg-rose-950/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-slate-900 border-2 border-rose-600 rounded-2xl max-w-md w-full p-6 text-center shadow-2xl space-y-4 animate-bounce-once">
+        <div class="inline-flex items-center justify-center w-16 h-16 bg-rose-600/20 text-rose-500 rounded-full border border-rose-500/40">
+          <i data-lucide="alert-octagon" class="w-10 h-10"></i>
+        </div>
+
+        <h3 class="text-2xl font-black text-rose-500">PERINGATAN KECURANGAN!</h3>
+
+        <div class="bg-slate-800 border border-slate-700 rounded-xl p-3 text-left text-xs space-y-1">
+          <div class="text-slate-400">Detail Pelanggaran:</div>
+          <div id="violationReason" class="font-semibold text-rose-400 text-sm">Terdeteksi Meninggalkan Tab / Mengubah Ukuran Layar</div>
+          <div class="text-slate-500 font-mono" id="violationTimestamp">10:15:32 WIB</div>
+        </div>
+
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Sistem mencatat aktivitas yang mencurigakan. Setiap pelanggaran dicatat dan dapat mengakibatkan pembatalan lembar jawaban Anda.
+        </p>
+
+        <div class="py-2 bg-rose-500/10 rounded-xl border border-rose-500/20">
+          <div class="text-xs text-rose-300 font-medium">Sisa Kesempatan Toleransi</div>
+          <div class="text-3xl font-black text-rose-400 tracking-wider" id="violationStrikeNum">1 / 3</div>
+        </div>
+
+        <button onclick="dismissViolationModal()" class="w-full bg-rose-600 hover:bg-rose-500 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 text-sm shadow-lg">
+          <i data-lucide="rotate-ccw" class="w-4 h-4"></i> Kembalikan Ujian & Layar Penuh
+        </button>
+      </div>
+    </div>
+
+    <!-- VIEW 5: DISQUALIFIED / LOCKED OUT SCREEN -->
+    <div id="modalLockout" class="fixed inset-0 bg-slate-950/95 backdrop-blur-lg z-50 hidden flex items-center justify-center p-4">
+      <div class="bg-slate-900 border border-rose-600 rounded-2xl max-w-lg w-full p-8 text-center shadow-2xl space-y-5">
+        <div class="inline-flex items-center justify-center w-20 h-20 bg-rose-600/20 text-rose-500 rounded-full border border-rose-500/40">
+          <i data-lucide="lock" class="w-10 h-10"></i>
+        </div>
+
+        <h3 class="text-2xl font-black text-rose-500">UJIAN TERKUNCI / DISKUALIFIKASI</h3>
+
+        <p class="text-slate-300 text-sm leading-relaxed">
+          Batas toleransi pelanggaran telah habis. Sesi ujian peserta didik ini telah dibekukan otomatis oleh sistem keamanan SafeExam.
+        </p>
+
+        <div class="bg-slate-800 border border-slate-700 p-4 rounded-xl text-left text-xs space-y-2">
+          <div class="flex justify-between"><span class="text-slate-400">Nama:</span> <span id="lockStudentName" class="font-semibold text-white"></span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Total Pelanggaran:</span> <span id="lockStrikeCount" class="font-bold text-rose-400"></span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Status Sesi:</span> <span class="text-rose-400 font-semibold">Terkunci Pengawas</span></div>
+        </div>
+
+        <!-- Supervisor Unlock Form -->
+        <div class="pt-3 border-t border-slate-800 space-y-3">
+          <label class="block text-xs font-medium text-slate-400 text-left">Masukkan PIN Pengawas untuk Membuka Kunci:</label>
+          <div class="flex gap-2">
+            <input type="password" id="unlockPinInput" placeholder="PIN Pengawas" class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-center font-mono text-white text-lg tracking-widest focus:outline-none focus:border-blue-500">
+            <button onclick="unlockExamSession()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-5 py-2.5 rounded-xl text-sm transition">
+              Buka Kunci
+            </button>
+          </div>
+          <p id="unlockErrorMsg" class="text-xs text-rose-400 hidden">PIN Pengawas Salah!</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- VIEW 6: EXAM COMPLETION PROOF -->
+    <section id="viewCompletion" class="hidden max-w-xl mx-auto w-full space-y-6">
+      <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 md:p-8 shadow-2xl text-center space-y-6">
+        <div class="inline-flex items-center justify-center w-20 h-20 bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30">
+          <i data-lucide="check-circle-2" class="w-12 h-12"></i>
+        </div>
+
+        <div>
+          <h2 class="text-2xl font-bold text-white">Ujian Berhasil Diselesaikan!</h2>
+          <p class="text-sm text-slate-400 mt-1">Terima kasih telah mengerjakan ujian dengan jujur dan tertib.</p>
+        </div>
+
+        <!-- Digital Certificate Card -->
+        <div class="bg-slate-900 border border-slate-700 rounded-xl p-5 text-left text-xs space-y-3 font-mono">
+          <div class="border-b border-slate-800 pb-2 text-center text-slate-400 uppercase tracking-widest font-sans font-bold">
+            Bukti Digital Penyerahan SafeExam
+          </div>
+          <div class="flex justify-between"><span class="text-slate-400">Nama Siswa:</span> <span id="compStudentName" class="text-slate-100 font-bold font-sans"></span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Kelas / NIS:</span> <span id="compStudentClass" class="text-slate-200"></span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Mata Pelajaran:</span> <span id="compExamTitle" class="text-slate-200"></span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Waktu Selesai:</span> <span id="compTime" class="text-slate-200"></span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Catatan Keamanan:</span> <span id="compStrikes" class="text-emerald-400 font-bold"></span></div>
+          <div class="flex justify-between"><span class="text-slate-400">Kode Verifikasi:</span> <span id="compHash" class="text-blue-400 font-mono">SE-9821-X7</span></div>
+        </div>
+
+        <div class="flex gap-3">
+          <button onclick="window.print()" class="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-medium py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2">
+            <i data-lucide="printer" class="w-4 h-4"></i> Cetak / Simpan Bukti
+          </button>
+          <button onclick="resetAppToStart()" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-sm transition flex items-center justify-center gap-2">
+            <i data-lucide="home" class="w-4 h-4"></i> Selesai
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- MODAL: PROCTOR PIN ACCESS -->
+  <div id="modalProctorLogin" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4">
+      <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+        <h3 class="font-bold text-slate-100 flex items-center gap-2">
+          <i data-lucide="lock" class="w-4 h-4 text-blue-400"></i> Otorisasi Pengawas
+        </h3>
+        <button onclick="toggleRoleModal(false)" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <p class="text-xs text-slate-400">Masukkan PIN Pengawas untuk mengakses pengaturan dan log pemantauan ujian.</p>
+      
+      <div>
+        <input type="password" id="proctorPinInput" placeholder="Masukkan PIN (Default: 1234)" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-4 py-3 text-center text-white font-mono text-xl tracking-widest focus:outline-none focus:border-blue-500">
+        <p id="proctorPinError" class="text-xs text-rose-400 mt-1 hidden">PIN tidak valid!</p>
+      </div>
+
+      <button onclick="authenticateProctor()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 rounded-xl text-sm transition">
+        Masuk Mode Pengawas
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================================================
+       APP STATE & CONFIGURATION
+       ========================================================================== */
+    const state = {
+      role: 'student', // 'student' or 'proctor'
+      examTitle: 'Ujian Akhir Semester - Matematika & Sains',
+      formUrl: 'https://docs.google.com/forms/d/e/1FAIpQLScf39d2U3X_DemoForm/viewform?embedded=true',
+      durationMinutes: 45,
+      maxStrikes: 3,
+      proctorPin: '1234',
+      activeProtections: {
+        fullscreen: true,
+        tabDetect: true,
+        blockCopy: true,
+        blockKeys: true,
+        blurOnFocusLoss: true
+      },
+      student: {
+        name: '',
+        class: '',
+        id: ''
+      },
+      examStarted: false,
+      timerInterval: null,
+      timeRemaining: 0,
+      strikes: 0,
+      logs: []
+    };
+
+    /* Demo Questions for Fallback Quiz Mode */
+    const demoQuestions = [
+      {
+        id: 1,
+        q: "Sebuah garis memiliki persamaan 2x + 3y = 12. Berapakah titik potong garis tersebut terhadap sumbu-Y?",
+        options: ["(0, 4)", "(0, 6)", "(4, 0)", "(6, 0)"]
+      },
+      {
+        id: 2,
+        q: "Proses fotosintesis pada tumbuhan hijau membutuhkan bahan utama berupa...",
+        options: ["Karbondioksida & Air", "Oksigen & Glukosa", "Nitrogen & Cahaya", "Klorofil & Asam Nitrat"]
+      },
+      {
+        id: 3,
+        q: "Manakah di antara pilihan berikut yang bukan merupakan prinsip kejujuran dalam ujian online?",
+        options: [
+          "Mengerjakan soal secara mandiri",
+          "Membuka tab baru untuk mencari kunci jawaban",
+          "Mematuhi arahan pengawas",
+          "Tidak membagikan jawaban kepada orang lain"
+        ]
+      }
+    ];
+
+    /* ==========================================================================
+       INITIALIZATION
+       ========================================================================== */
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      setupAntiCheatListeners();
+      switchView('student-setup');
+    });
+
+    /* ==========================================================================
+       VIEW MANAGEMENT
+       ========================================================================== */
+    function switchView(viewName) {
+      document.getElementById('viewProctor').classList.add('hidden');
+      document.getElementById('viewStudentSetup').classList.add('hidden');
+      document.getElementById('viewActiveExam').classList.add('hidden');
+      document.getElementById('viewCompletion').classList.add('hidden');
+      document.getElementById('liveExamMetrics').classList.add('hidden');
+
+      if (viewName === 'proctor') {
+        document.getElementById('viewProctor').classList.remove('hidden');
+        document.getElementById('headerSubtitle').innerText = "Dashboard Konfigurasi & Pengawasan Ujian";
+      } else if (viewName === 'student-setup') {
+        document.getElementById('viewStudentSetup').classList.remove('hidden');
+        document.getElementById('headerSubtitle').innerText = "Portal Ujian Terproteksi Berbasis Google Form";
+      } else if (viewName === 'active-exam') {
+        document.getElementById('viewActiveExam').classList.remove('hidden');
+        document.getElementById('liveExamMetrics').classList.remove('hidden');
+        document.getElementById('liveExamMetrics').classList.add('flex');
+      } else if (viewName === 'completion') {
+        document.getElementById('viewCompletion').classList.remove('hidden');
+      }
+
+      lucide.createIcons();
+    }
+
+    /* ==========================================================================
+       PROCTOR CONFIGURATION LOGIC
+       ========================================================================== */
+    function toggleRoleModal(show) {
+      const modal = document.getElementById('modalProctorLogin');
+      if (show) {
+        modal.classList.remove('hidden');
+        document.getElementById('proctorPinInput').value = '';
+        document.getElementById('proctorPinError').classList.add('hidden');
+      } else {
+        modal.classList.add('hidden');
+      }
+    }
+
+    function authenticateProctor() {
+      const inputPin = document.getElementById('proctorPinInput').value;
+      if (inputPin === state.proctorPin) {
+        toggleRoleModal(false);
+        switchView('proctor');
+      } else {
+        document.getElementById('proctorPinError').classList.remove('hidden');
+      }
+    }
+
+    function loadDemoPreset() {
+      document.getElementById('cfgExamTitle').value = "Ujian Akhir Semester - Matematika & IPA";
+      document.getElementById('cfgFormUrl').value = "https://docs.google.com/forms/d/e/1FAIpQLScf39d2U3X_DemoForm/viewform?embedded=true";
+      document.getElementById('cfgDuration').value = "60";
+      document.getElementById('cfgMaxStrikes').value = "3";
+      document.getElementById('cfgProctorPin').value = "1234";
+    }
+
+    function saveAndStartSession() {
+      state.examTitle = document.getElementById('cfgExamTitle').value || "Ujian Google Form";
+      state.formUrl = document.getElementById('cfgFormUrl').value;
+      state.durationMinutes = parseInt(document.getElementById('cfgDuration').value) || 45;
+      state.maxStrikes = parseInt(document.getElementById('cfgMaxStrikes').value) || 3;
+      state.proctorPin = document.getElementById('cfgProctorPin').value || "1234";
+
+      state.activeProtections = {
+        fullscreen: document.getElementById('chkFullscreen').checked,
+        tabDetect: document.getElementById('chkTabDetect').checked,
+        blockCopy: document.getElementById('chkBlockCopy').checked,
+        blockKeys: document.getElementById('chkBlockKeys').checked,
+        blurOnFocusLoss: document.getElementById('chkBlurOnFocusLoss').checked
+      };
+
+      // Update student display texts
+      document.getElementById('dispExamTitle').innerText = state.examTitle;
+      document.getElementById('dispExamDuration').innerText = `${state.durationMinutes} Menit`;
+
+      alert("Pengaturan Ujian berhasil disimpan! Mengalihkan ke Portal Ujian Siswa...");
+      switchView('student-setup');
+    }
+
+    /* ==========================================================================
+       STUDENT EXAM FLOW & TIMERS
+       ========================================================================== */
+    function startStudentExam() {
+      const name = document.getElementById('studentNameInput').value.trim();
+      const sClass = document.getElementById('studentClassInput').value.trim();
+      const sId = document.getElementById('studentIdInput').value.trim();
+      const pledge = document.getElementById('chkHonorPledge').checked;
+
+      if (!name || !sClass || !sId) {
+        alert("Harap lengkapi Nama, Kelas, dan Nomor Ujian terlebih dahulu.");
+        return;
+      }
+
+      if (!pledge) {
+        alert("Anda wajib menyetujui Pakta Integritas sebelum memulai ujian.");
+        return;
+      }
+
+      state.student = { name, class: sClass, id: sId };
+      state.strikes = 0;
+      state.examStarted = true;
+      updateStrikeUI();
+
+      document.getElementById('dispStudentNameTag').innerText = name;
+      document.getElementById('dispStudentClassTag').innerText = sClass;
+
+      // Request Fullscreen if enabled
+      if (state.activeProtections.fullscreen) {
+        enterFullscreen();
+      }
+
+      // Initialize Timer
+      state.timeRemaining = state.durationMinutes * 60;
+      startTimer();
+
+      // Load Iframe / Form
+      loadFormInIframe();
+
+      switchView('active-exam');
+      logProctorEvent(name, "Sesi Ujian Dimulai", 0, "Aktif");
+    }
+
+    function startTimer() {
+      clearInterval(state.timerInterval);
+      updateTimerDisplay();
+
+      state.timerInterval = setInterval(() => {
+        state.timeRemaining--;
+        updateTimerDisplay();
+
+        if (state.timeRemaining <= 0) {
+          clearInterval(state.timerInterval);
+          alert("Waktu Ujian Telah Habis! Jawaban Anda akan dikirimkan otomatis.");
+          finishExamPrompt();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const hrs = Math.floor(state.timeRemaining / 3600);
+      const mins = Math.floor((state.timeRemaining % 3600) / 60);
+      const secs = state.timeRemaining % 60;
+
+      const formatted = `${String(hrs).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      document.getElementById('examTimerDisplay').innerText = formatted;
+    }
+
+    /* ==========================================================================
+       FORM & FALLBACK HANDLING
+       ========================================================================== */
+    function loadFormInIframe() {
+      const iframe = document.getElementById('googleFormIframe');
+      const loader = document.getElementById('frameLoader');
+      const fallback = document.getElementById('fallbackQuizContainer');
+
+      iframe.classList.remove('hidden');
+      fallback.classList.add('hidden');
+      loader.classList.remove('hidden');
+
+      if (state.formUrl && state.formUrl.startsWith('http')) {
+        iframe.src = state.formUrl;
+      } else {
+        // Fallback if no valid URL is provided
+        setTimeout(() => {
+          showFallbackQuiz();
+        }, 1000);
+      }
+    }
+
+    function onIframeLoaded() {
+      document.getElementById('frameLoader').classList.add('hidden');
+    }
+
+    function toggleFallbackNotice() {
+      const iframe = document.getElementById('googleFormIframe');
+      const fallback = document.getElementById('fallbackQuizContainer');
+
+      if (fallback.classList.contains('hidden')) {
+        showFallbackQuiz();
+      } else {
+        fallback.classList.add('hidden');
+        iframe.classList.remove('hidden');
+      }
+    }
+
+    function showFallbackQuiz() {
+      document.getElementById('frameLoader').classList.add('hidden');
+      document.getElementById('googleFormIframe').classList.add('hidden');
+      const fallback = document.getElementById('fallbackQuizContainer');
+      fallback.classList.remove('hidden');
+
+      const container = document.getElementById('interactiveQuestionsList');
+      container.innerHTML = '';
+
+      demoQuestions.forEach((q, idx) => {
+        const qCard = document.createElement('div');
+        qCard.className = "bg-slate-800 border border-slate-700 p-5 rounded-xl space-y-3";
+        qCard.innerHTML = `
+          <div class="font-semibold text-slate-100 text-sm">Soal ${idx + 1}: ${q.q}</div>
+          <div class="space-y-2">
+            ${q.options.map((opt, i) => `
+              <label class="flex items-center gap-3 p-2.5 bg-slate-900/60 rounded-lg border border-slate-700/80 cursor-pointer hover:bg-slate-700/50 text-xs text-slate-300">
+                <input type="radio" name="q_${q.id}" value="${i}" class="accent-blue-500">
+                <span>${opt}</span>
+              </label>
+            `).join('')}
+          </div>
+        `;
+        container.appendChild(qCard);
+      });
+    }
+
+    function submitExamManual() {
+      if (confirm("Apakah Anda yakin ingin menyelesaikan dan mengirimkan seluruh jawaban?")) {
+        finishExamPrompt();
+      }
+    }
+
+    /* ==========================================================================
+       ANTI-CHEAT DETECTORS & LISTENERS
+       ========================================================================== */
+    function setupAntiCheatListeners() {
+      // 1. Tab Switch / Window Blur Detection
+      window.addEventListener('blur', () => {
+        if (!state.examStarted) return;
+        if (state.activeProtections.tabDetect) {
+          triggerViolation("Terdeteksi Berpindah Tab / Membuka Aplikasi Lain");
+        }
+        if (state.activeProtections.blurOnFocusLoss) {
+          document.getElementById('appBody').classList.add('blur-security');
+        }
+      });
+
+      window.addEventListener('focus', () => {
+        document.getElementById('appBody').classList.remove('blur-security');
+      });
+
+      document.addEventListener('visibilitychange', () => {
+        if (!state.examStarted) return;
+        if (document.hidden && state.activeProtections.tabDetect) {
+          triggerViolation("Terdeteksi Meninggalkan Tampilan Ujian (Visibility Loss)");
+        }
+      });
+
+      // 2. Fullscreen Change Detection
+      document.addEventListener('fullscreenchange', () => {
+        if (!state.examStarted) return;
+        if (!document.fullscreenElement && state.activeProtections.fullscreen) {
+          triggerViolation("Terdeteksi Keluar dari Mode Layar Penuh");
+        }
+      });
+
+      // 3. Prevent Shortcut Keys (Ctrl+C, Ctrl+V, F12, Alt+Tab, Ctrl+Shift+I)
+      document.addEventListener('keydown', (e) => {
+        if (!state.examStarted || !state.activeProtections.blockKeys) return;
+
+        // Block F12 (DevTools)
+        if (e.key === 'F12') {
+          e.preventDefault();
+          triggerViolation("Menekan Tombol F12 (Developer Tools)");
+        }
+
+        // Block Ctrl+C, Ctrl+V, Ctrl+U, Ctrl+S
+        if (e.ctrlKey && ['c', 'v', 'u', 's', 'a'].includes(e.key.toLowerCase())) {
+          e.preventDefault();
+          triggerViolation(`Menekan Kombinasi Tombol Pintas (Ctrl + ${e.key.toUpperCase()})`);
+        }
+
+        // Block Ctrl+Shift+I / J
+        if (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase())) {
+          e.preventDefault();
+          triggerViolation("Mencoba Membuka Inspeksi Halaman");
+        }
+      });
+
+      // 4. Block Right Click
+      document.addEventListener('contextmenu', (e) => {
+        if (state.examStarted && state.activeProtections.blockCopy) {
+          e.preventDefault();
+        }
+      });
+    }
+
+    function triggerViolation(reason) {
+      state.strikes++;
+      updateStrikeUI();
+
+      const timeStr = new Date().toLocaleTimeString('id-ID') + " WIB";
+      logProctorEvent(state.student.name || "Peserta", reason, state.strikes, "Peringatan Diberikan");
+
+      if (state.strikes >= state.maxStrikes) {
+        // Disqualify / Lock
+        lockoutExam();
+      } else {
+        // Show Violation Modal
+        document.getElementById('violationReason').innerText = reason;
+        document.getElementById('violationTimestamp').innerText = timeStr;
+        document.getElementById('violationStrikeNum').innerText = `${state.strikes} / ${state.maxStrikes}`;
+        document.getElementById('modalViolation').classList.remove('hidden');
+        playBeep();
+      }
+    }
+
+    function updateStrikeUI() {
+      const strikeDisplay = document.getElementById('strikeCountDisplay');
+      const strikeBadge = document.getElementById('strikeBadge');
+      const strikeIcon = document.getElementById('strikeIcon');
+
+      strikeDisplay.innerText = `${state.strikes} / ${state.maxStrikes}`;
+
+      if (state.strikes > 0) {
+        strikeBadge.className = "bg-rose-950/80 border border-rose-500/50 px-3 py-1.5 rounded-lg flex items-center gap-2 animate-pulse";
+        strikeDisplay.className = "font-bold text-rose-400";
+        strikeIcon.className = "w-4 h-4 text-rose-400";
+      } else {
+        strikeBadge.className = "bg-slate-900/80 border border-emerald-500/30 px-3 py-1.5 rounded-lg flex items-center gap-2";
+        strikeDisplay.className = "font-bold text-emerald-400";
+        strikeIcon.className = "w-4 h-4 text-emerald-400";
+      }
+    }
+
+    function dismissViolationModal() {
+      document.getElementById('modalViolation').classList.add('hidden');
+      if (state.activeProtections.fullscreen) {
+        enterFullscreen();
+      }
+    }
+
+    function lockoutExam() {
+      document.getElementById('modalViolation').classList.add('hidden');
+      document.getElementById('lockStudentName').innerText = state.student.name;
+      document.getElementById('lockStrikeCount').innerText = `${state.strikes} dari ${state.maxStrikes} Toleransi`;
+      document.getElementById('modalLockout').classList.remove('hidden');
+      document.getElementById('unlockErrorMsg').classList.add('hidden');
+      document.getElementById('unlockPinInput').value = '';
+      clearInterval(state.timerInterval);
+    }
+
+    function unlockExamSession() {
+      const pin = document.getElementById('unlockPinInput').value;
+      if (pin === state.proctorPin) {
+        document.getElementById('modalLockout').classList.add('hidden');
+        state.strikes = 0; // Reset strikes
+        updateStrikeUI();
+        startTimer(); // Resume timer
+        logProctorEvent(state.student.name, "Dibuka Kunci oleh Pengawas", 0, "Sesi Diperbarui");
+        if (state.activeProtections.fullscreen) {
+          enterFullscreen();
+        }
+      } else {
+        document.getElementById('unlockErrorMsg').classList.remove('hidden');
+      }
+    }
+
+    /* ==========================================================================
+       UTILITIES & COMPLETION
+       ========================================================================== */
+    function enterFullscreen() {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        elem.requestFullscreen().catch(err => console.log(err));
+      } else if (elem.webkitRequestFullscreen) {
+        elem.webkitRequestFullscreen();
+      }
+    }
+
+    function exitFullscreen() {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch(err => console.log(err));
+      }
+    }
+
+    function finishExamPrompt() {
+      state.examStarted = false;
+      clearInterval(state.timerInterval);
+      if (document.fullscreenElement) {
+        exitFullscreen();
+      }
+
+      // Populate completion certificate
+      document.getElementById('compStudentName').innerText = state.student.name;
+      document.getElementById('compStudentClass').innerText = `${state.student.class} (${state.student.id})`;
+      document.getElementById('compExamTitle').innerText = state.examTitle;
+      document.getElementById('compTime').innerText = new Date().toLocaleString('id-ID');
+      document.getElementById('compStrikes').innerText = `${state.strikes} Kali Catatan Pelanggaran`;
+
+      switchView('completion');
+      logProctorEvent(state.student.name, "Ujian Selesai Diserahkan", state.strikes, "Selesai");
+    }
+
+    function requestProctorHelp() {
+      alert("Permintaan bantuan telah dikirimkan ke pengawas ujian. Mohon tetap berada di lembar soal.");
+      logProctorEvent(state.student.name, "Siswa Meminta Bantuan", state.strikes, "Meminta Bantuan");
+    }
+
+    function logProctorEvent(studentName, eventType, strikes, action) {
+      const table = document.getElementById('proctorLogTable');
+      const timeStr = new Date().toLocaleTimeString('id-ID');
+
+      const tr = document.createElement('tr');
+      tr.className = "hover:bg-slate-750 border-b border-slate-700/50";
+      tr.innerHTML = `
+        <td class="p-3 font-mono text-slate-400">${timeStr}</td>
+        <td class="p-3 font-medium text-white">${studentName}</td>
+        <td class="p-3 text-slate-300">${eventType}</td>
+        <td class="p-3"><span class="px-2 py-0.5 ${strikes > 0 ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'} rounded-full font-bold">${strikes} / ${state.maxStrikes}</span></td>
+        <td class="p-3 text-slate-400">${action}</td>
+      `;
+      table.prepend(tr);
+    }
+
+    function playBeep() {
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+      } catch (e) {
+        // AudioContext may be restricted by browser policy
+      }
+    }
+
+    function resetAppToStart() {
+      state.examStarted = false;
+      state.strikes = 0;
+      switchView('student-setup');
+    }
+  </script>
+</body>
+</html>
